@@ -35,7 +35,7 @@ read -p "Enter your preferred Password, NO SPACES ALLOWED: " -s pswrd && echo
 
 # Delete previous nginx configuration file and create our default one.
 sudo rm /etc/nginx/nginx.conf
-sudo cp $DIR/nginx.conf /etc/nginx/
+sudo cp ${DIR}/nginx.conf /etc/nginx/
 
 # Create the cache directory
 sudo mkdir -p /usr/share/nginx/cache/fcgi
@@ -45,15 +45,16 @@ sudo mkdir /run/php-fpm
 
 # Delete previous php-fpm configuration file and create our default one.
 sudo rm /etc/php/8.1/fpm/php-fpm.conf
-sudo cp $DIR/php-fpm.conf /etc/php/8.1/fpm/
+sudo cp ${DIR}/php-fpm.conf /etc/php/8.1/fpm/
 
 # Remove the original (default) pool config file and make another
 sudo rm /etc/php/8.1/fpm/pool.d/www.conf
-sudo cp $DIR/site-php.conf /etc/php/8.1/fpm/pool.d/
+sudo cp ${DIR}/site-php.conf /etc/php/8.1/fpm/pool.d/
+sed -i 's/yoursitename/${sitename}/g' /etc/php/8.1/fpm/pool.d/site-php.conf
 
 # Delete previous php.ini file and create our default one.
 sudo rm /etc/php/8.1/fpm/php.ini
-sudo cp $DIR/php.ini /etc/php/8.1/fpm/
+sudo cp ${DIR}/php.ini /etc/php/8.1/fpm/
 
 # Next we configure MySQL first by creating a strong password
 rootword=$(openssl rand -base64 12)
@@ -73,7 +74,7 @@ EOF
 # Note down this password. Else you will lose it and you may have to reset the admin password in mySQL
 echo -e "SUCCESS! MySQL password is: ${rootword}" 
 
-systemctl restart mysql
+sudo systemctl restart mysql
 
 # Create the User account and make a log file for the running applications
 sudo useradd -s /bin/bash -m -d /home/${sitename} ${sitename}
@@ -82,6 +83,11 @@ sudo mkdir -p /home/${sitename}/logs
 # Set the appropriate permissions
 sudo chown -R ${sitename}:www-data /home/${sitename}
 sudo chmod 775 /home/${sitename}
+
+# Create nginx vhost config file
+sudo cp ${DIR}/site-nginx.conf /etc/nginx/conf.d/
+sed -i 's/yoursitename/${sitename}/g' /etc/nginx/conf.d/site-nginx.conf
+
 
 # Disable default nginx vhost
 sudo rm /etc/nginx/sites-enabled/default
@@ -112,14 +118,14 @@ rm latest.tar.gz
 exit
 
 # Setting proper file permissions on the website
-cd /home/${sitename}/public_html
-chown -R ${sitename}:www-data .
-find . -type d -exec chmod 755 {} \;
-find . -type f -exec chmod 644 {} \;
+sudo cd /home/${sitename}/public_html
+sudo chown -R ${sitename}:www-data .
+sudo find . -type d -exec chmod 755 {} \;
+sudo find . -type f -exec chmod 644 {} \;
 
 # Restarting the configured services
-systemctl restart php8.1-fpm
-systemctl restart nginx
+sudo systemctl restart php8.1-fpm
+sudo systemctl restart nginx
 
 cat << EOF 
 Congratulations! Wordpress has being successfully installed.
