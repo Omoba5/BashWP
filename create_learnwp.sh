@@ -6,7 +6,7 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # Step 1: Ensure all apps are up to date
 sudo apt update
-sudo apt ugrade -y
+sudo apt upgrade -y
 
 # Have a short break to ensure the updates are completed before installation of Server Stack.
 sleep 10
@@ -31,7 +31,7 @@ sleep 15
 # Ask the User for some Website name, username and passwords.
 read -p "Enter your choice Website Name, lowercase alphabets ONLY: " sitename
 echo -e "Your website name is: ${sitename} which doubles as your USERNAME"
-read -p "Enter your preferred Password, NO SPACES ALLOWED: " -s pswrd && echo
+# read -p "Enter your preferred Password, NO SPACES ALLOWED: " -s pswrd && echo
 
 # Delete previous nginx configuration file and create our default one.
 sudo rm /etc/nginx/nginx.conf
@@ -50,7 +50,7 @@ sudo cp ${DIR}/php-fpm.conf /etc/php/8.1/fpm/
 # Remove the original (default) pool config file and make another
 sudo rm /etc/php/8.1/fpm/pool.d/www.conf
 sudo cp ${DIR}/site-php.conf /etc/php/8.1/fpm/pool.d/
-sed -i 's/yoursitename/${sitename}/g' /etc/php/8.1/fpm/pool.d/site-php.conf
+sudo sed -i "s/yoursitename/${sitename}/g" /etc/php/8.1/fpm/pool.d/site-php.conf
 
 # Delete previous php.ini file and create our default one.
 sudo rm /etc/php/8.1/fpm/php.ini
@@ -59,7 +59,7 @@ sudo cp ${DIR}/php.ini /etc/php/8.1/fpm/
 # Next we configure MySQL first by creating a strong password
 rootword=$(openssl rand -base64 12)
 
-# Set password with `debconf-set-selections` You don't have to enter it in prompt
+# Set password with `debconf-set-selections` no need to enter it in prompt
 sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password ${rootword}" # new password for the MySQL root user
 sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${rootword}" # repeat password for the MySQL root user
 
@@ -77,7 +77,7 @@ echo -e "SUCCESS! MySQL password is: ${rootword}"
 sudo systemctl restart mysql
 
 # Create the User account and make a log file for the running applications
-sudo useradd -s /bin/bash -m -d /home/${sitename} ${sitename}
+sudo useradd -s /bin/bash -m -d /home/${sitename} ${sitename} --password=${passwrd}
 sudo mkdir -p /home/${sitename}/logs
 
 # Set the appropriate permissions
@@ -86,7 +86,7 @@ sudo chmod 775 /home/${sitename}
 
 # Create nginx vhost config file
 sudo cp ${DIR}/site-nginx.conf /etc/nginx/conf.d/
-sed -i 's/yoursitename/${sitename}/g' /etc/nginx/conf.d/site-nginx.conf
+sudo sed -i "s/yoursitename/${sitename}/g" /etc/nginx/conf.d/site-nginx.conf
 
 
 # Disable default nginx vhost
@@ -104,21 +104,23 @@ GRANT ALL PRIVILEGES ON ${sitename}.* TO ${sitename}@localhost;
 FLUSH PRIVILEGES;
 EOF
 
+echo
+echo
+echo "SQL SETUP COMPLETE, PROCEEDING TO WORDPRESS INSTALLATION"
+echo
+echo
+
 # Installing Wordpress as the Website user
-su ${sitename}
-cd /home/${sitename}
-wget https://wordpress.org/latest.tar.gz
+wget "https://wordpress.org/latest.tar.gz"
+tar zxf latest.tar.gz
+rm latest.tar.gz
+sudo mv wordpress /home/${sitename}/public_html
 
 # Ensuring we don't get ahead of ourselves
 sleep 20
-# Cleaning up
-tar zxf latest.tar.gz
-rm latest.tar.gz
-# Exiting user shell
-exit
 
 # Setting proper file permissions on the website
-sudo cd /home/${sitename}/public_html
+cd /home/${sitename}/public_html
 sudo chown -R ${sitename}:www-data .
 sudo find . -type d -exec chmod 755 {} \;
 sudo find . -type f -exec chmod 644 {} \;
@@ -129,11 +131,16 @@ sudo systemctl restart nginx
 
 cat << EOF 
 Congratulations! Wordpress has being successfully installed.
+
 Your username which is also your website name is ${sitename}
-Your Databade username is ${sitename}
+
+Your Database Name is ${sitename}
+
 Your Database password is ${DBpswd} running @localhost
+
 Your MySQL root password is ${rootword}
 EOF
 
-echo "Copy and run this command after WordPress installation:" 
+echo "NOTE: Copy and run this command after WordPress installation:" 
+echo
 echo "chmod 640 /home/${sitename}/public_html/wp-config.php"
