@@ -1,4 +1,4 @@
-This is a Bash Shell Script for an Automated installation of a **LEMP** server.
+This is a Bash Shell Script for an Automated installation of a **WordPress LEMP** server.
 LEMP - Linux Nginx MySQL PHP
 
 
