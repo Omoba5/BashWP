@@ -2,11 +2,11 @@
 
 # Absolute Path of Script
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-
+SITENAME=$1
 
 # Step 1: Ensure all apps are up to date
 sudo apt update
-sudo apt upgrade -y
+# sudo apt upgrade -y
 
 # Have a short break to ensure the updates are completed before installation of Server Stack.
 sleep 10
@@ -29,8 +29,8 @@ sudo apt install -y php-curl php-common php-imagick php-mbstring php-xml php-zip
 sleep 15
 
 # Ask the User for some Website name, username and passwords.
-read -p "Enter your choice Website Name, lowercase alphabets ONLY: " sitename
-echo -e "Your website name is: ${sitename} which doubles as your USERNAME"
+# read -p "Enter your choice Website Name, lowercase alphabets ONLY: " SITENAME
+# echo -e "Your website name is: ${SITENAME} which doubles as your USERNAME"
 # read -p "Enter your preferred Password, NO SPACES ALLOWED: " -s pswrd && echo
 
 # Delete previous nginx configuration file and create our default one.
@@ -50,7 +50,7 @@ sudo cp ${DIR}/php-fpm.conf /etc/php/8.1/fpm/
 # Remove the original (default) pool config file and make another
 sudo rm /etc/php/8.1/fpm/pool.d/www.conf
 sudo cp ${DIR}/site-php.conf /etc/php/8.1/fpm/pool.d/
-sudo sed -i "s/yoursitename/${sitename}/g" /etc/php/8.1/fpm/pool.d/site-php.conf
+sudo sed -i "s/yourSITENAME/${SITENAME}/g" /etc/php/8.1/fpm/pool.d/site-php.conf
 
 # Delete previous php.ini file and create our default one.
 sudo rm /etc/php/8.1/fpm/php.ini
@@ -77,30 +77,30 @@ echo -e "SUCCESS! MySQL password is: ${rootword}"
 sudo systemctl restart mysql
 
 # Create the User account and make a log file for the running applications
-sudo useradd -s /bin/bash -m -d /home/${sitename} ${sitename} --password=${passwrd}
-sudo mkdir -p /home/${sitename}/logs
+sudo useradd -s /bin/bash -m -d /home/${SITENAME} ${SITENAME} --password=${passwrd}
+sudo mkdir -p /home/${SITENAME}/logs
 
 # Set the appropriate permissions
-sudo chown -R ${sitename}:www-data /home/${sitename}
-sudo chmod 775 /home/${sitename}
+sudo chown -R ${SITENAME}:www-data /home/${SITENAME}
+sudo chmod 775 /home/${SITENAME}
 
 # Create nginx vhost config file
 sudo cp ${DIR}/site-nginx.conf /etc/nginx/conf.d/
-sudo sed -i "s/yoursitename/${sitename}/g" /etc/nginx/conf.d/site-nginx.conf
+sudo sed -i "s/yourSITENAME/${SITENAME}/g" /etc/nginx/conf.d/site-nginx.conf
 
 
 # Disable default nginx vhost
 sudo rm /etc/nginx/sites-enabled/default
 
 # Create the php-fpm log file
-sudo -u ${sitename} touch /home/${sitename}/logs/phpfpm_error.log
+sudo -u ${SITENAME} touch /home/${SITENAME}/logs/phpfpm_error.log
 
 # Create Site Database and Database User
 DBpswd=$(openssl rand -base64 12)
 sudo mysql --user=root --password=${DBpswd} << EOF
-CREATE DATABASE ${sitename};
-CREATE USER '${sitename}'@'localhost' IDENTIFIED BY '${DBpswd}';
-GRANT ALL PRIVILEGES ON ${sitename}.* TO ${sitename}@localhost;
+CREATE DATABASE ${SITENAME};
+CREATE USER '${SITENAME}'@'localhost' IDENTIFIED BY '${DBpswd}';
+GRANT ALL PRIVILEGES ON ${SITENAME}.* TO ${SITENAME}@localhost;
 FLUSH PRIVILEGES;
 EOF
 
@@ -111,17 +111,17 @@ echo
 echo
 
 # Installing Wordpress as the Website user
-wget "https://wordpress.org/latest.tar.gz"
-tar zxf latest.tar.gz
-rm latest.tar.gz
-sudo mv wordpress /home/${sitename}/public_html
+wget "https://wordpress.org/wordpress-6.1.1.tar.gz"
+tar zxf wordpress-6.1.1.tar.gz
+rm wordpress-6.1.1.tar.gz
+sudo mv wordpress /home/${SITENAME}/public_html
 
 # Ensuring we don't get ahead of ourselves
 sleep 20
 
 # Setting proper file permissions on the website
-cd /home/${sitename}/public_html
-sudo chown -R ${sitename}:www-data .
+cd /home/${SITENAME}/public_html
+sudo chown -R ${SITENAME}:www-data .
 sudo find . -type d -exec chmod 755 {} \;
 sudo find . -type f -exec chmod 644 {} \;
 
@@ -132,9 +132,9 @@ sudo systemctl restart nginx
 cat << EOF 
 Congratulations! Wordpress has being successfully installed.
 
-Your username which is also your website name is ${sitename}
+Your username which is also your website name is ${SITENAME}
 
-Your Database Name is ${sitename}
+Your Database Name is ${SITENAME}
 
 Your Database password is ${DBpswd} running @localhost
 
@@ -143,4 +143,4 @@ EOF
 
 echo "NOTE: Copy and run this command after WordPress installation:" 
 echo
-echo "chmod 640 /home/${sitename}/public_html/wp-config.php"
+echo "chmod 640 /home/${SITENAME}/public_html/wp-config.php"
